@@ -31,3 +31,16 @@ Comando para validar a suite completa:
 ```bash
 npm --prefix .github/nb-code run pipeline:test
 ```
+
+## Relatorio de CI
+Exemplo de geracao de relatorio:
+
+```bash
+node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --report .github/nb-code/examples/report.sample.json
+```
+
+Comando de teste automatizado do relatorio:
+
+```bash
+npm --prefix .github/nb-code run pipeline:test-ci-report
+```

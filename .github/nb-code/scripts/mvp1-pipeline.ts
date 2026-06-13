@@ -42,13 +42,32 @@ type ResponsePayload = {
 	nextSteps?: string[];
 };
 
+type ExecutionReport = {
+	timestamp: string;
+	requestPath?: string;
+	outputPath?: string;
+	reportPath?: string;
+	outcome: 'success' | 'usage-error' | 'request-invalid' | 'response-invalid' | 'runtime-error';
+	exitCode: number;
+	requestValidation: {
+		valid: boolean;
+		errors: string[];
+	};
+	responseValidation: {
+		valid: boolean;
+		errors: string[];
+	};
+	responseStatus?: ResponsePayload['status'];
+	security?: ResponsePayload['security'];
+};
+
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const contractsDir = resolve(scriptDir, '..', 'contracts');
 const requestSchemaPath = resolve(contractsDir, 'request.schema.json');
 const responseSchemaPath = resolve(contractsDir, 'response.schema.json');
 
 function parseArgs(argv) {
-	const args = { request: '', output: '' };
+	const args = { request: '', output: '', report: '' };
 	for (let i = 2; i < argv.length; i++) {
 		const token = argv[i];
 		if ((token === '--request' || token === '-r') && argv[i + 1]) {
@@ -59,6 +78,10 @@ function parseArgs(argv) {
 			args.output = argv[++i];
 			continue;
 		}
+		if ((token === '--report' || token === '-p') && argv[i + 1]) {
+			args.report = argv[++i];
+			continue;
+		}
 	}
 	return args;
 }
@@ -66,6 +89,10 @@ function parseArgs(argv) {
 function readJsonFile(path) {
 	const raw = readFileSync(path, 'utf-8');
 	return JSON.parse(raw) as JsonObject;
+}
+
+function writeExecutionReport(reportPath: string, report: ExecutionReport) {
+	writeFileSync(reportPath, JSON.stringify(report, null, 2), 'utf-8');
 }
 
 function formatSchemaErrors(errors: unknown[] | null | undefined) {
@@ -175,15 +202,51 @@ function buildResponse(request: RequestPayload): ResponsePayload {
 function main() {
 	const { validateRequest, validateResponse } = createSchemaValidators();
 	const args = parseArgs(process.argv);
+	const report: ExecutionReport = {
+		timestamp: new Date().toISOString(),
+		outcome: 'runtime-error',
+		exitCode: 99,
+		requestValidation: {
+			valid: false,
+			errors: []
+		},
+		responseValidation: {
+			valid: false,
+			errors: []
+		}
+	};
+
+	const reportPath = args.report ? resolve(args.report) : '';
+	if (reportPath) {
+		report.reportPath = reportPath;
+	}
 	if (!args.request) {
-		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>]');
+		report.outcome = 'usage-error';
+		report.exitCode = 1;
+		if (reportPath) {
+			writeExecutionReport(reportPath, report);
+		}
+		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>]');
 		process.exit(1);
 	}
 
 	const requestPath = resolve(args.request);
+	report.requestPath = requestPath;
+	if (args.output) {
+		report.outputPath = resolve(args.output);
+	}
 	const requestData = readJsonFile(requestPath);
 	if (!validateRequest(requestData)) {
 		const requestErrors = formatSchemaErrors(validateRequest.errors as unknown[] | null | undefined);
+		report.outcome = 'request-invalid';
+		report.exitCode = 2;
+		report.requestValidation = {
+			valid: false,
+			errors: requestErrors
+		};
+		if (reportPath) {
+			writeExecutionReport(reportPath, report);
+		}
 		console.error('Falha na validacao do request (schema):');
 		for (const error of requestErrors) {
 			console.error(`- ${error}`);
@@ -192,14 +255,41 @@ function main() {
 	}
 
 	const request = requestData as RequestPayload;
+	report.requestValidation = {
+		valid: true,
+		errors: []
+	};
 	const response = buildResponse(request);
 	if (!validateResponse(response)) {
 		const responseErrors = formatSchemaErrors(validateResponse.errors as unknown[] | null | undefined);
+		report.outcome = 'response-invalid';
+		report.exitCode = 3;
+		report.responseValidation = {
+			valid: false,
+			errors: responseErrors
+		};
+		report.responseStatus = response.status;
+		report.security = response.security;
+		if (reportPath) {
+			writeExecutionReport(reportPath, report);
+		}
 		console.error('Falha na validacao do response (schema):');
 		for (const error of responseErrors) {
 			console.error(`- ${error}`);
 		}
 		process.exit(3);
+	}
+
+	report.responseValidation = {
+		valid: true,
+		errors: []
+	};
+	report.responseStatus = response.status;
+	report.security = response.security;
+	report.outcome = 'success';
+	report.exitCode = 0;
+	if (reportPath) {
+		writeExecutionReport(reportPath, report);
 	}
 
 	const output = JSON.stringify(response, null, 2);

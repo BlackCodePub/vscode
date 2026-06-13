@@ -8,7 +8,8 @@
     "pipeline:sample": "node --experimental-strip-types ./scripts/mvp1-pipeline.ts --request ./examples/request.sample.json --output ./examples/response.sample.json",
     "pipeline:test-negative": "node --experimental-strip-types ./scripts/mvp1-negative-test.ts",
     "pipeline:test-regression": "node --experimental-strip-types ./scripts/mvp1-regression-test.ts",
-    "pipeline:test": "npm run pipeline:test-negative && npm run pipeline:test-regression"
+    "pipeline:test-ci-report": "node --experimental-strip-types ./scripts/mvp1-ci-report-test.ts",
+    "pipeline:test": "npm run pipeline:test-negative && npm run pipeline:test-regression && npm run pipeline:test-ci-report"
   },
   "dependencies": {
     "ajv": "^8.17.1"
