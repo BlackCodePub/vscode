@@ -113,6 +113,20 @@ Exemplo de geracao de resumo para draft PR:
 npm --prefix .github/nb-code run pipeline:pr-summary -- --report .github/nb-code/examples/release-check.sample.json --output .github/nb-code/examples/pr-summary.sample.md
 ```
 
+## Integracao Ollama (IA Local)
+
+Exemplo de execucao com modelo local:
+
+```bash
+npm --prefix .github/nb-code run pipeline:ollama -- --request .github/nb-code/examples/request.sample.json --model llama3.1:8b
+```
+
+Exemplo em modo estrito (falha se inferencia local nao responder):
+
+```bash
+npm --prefix .github/nb-code run pipeline:ollama -- --request .github/nb-code/examples/request.sample.json --model llama3.1:8b --strict-ollama
+```
+
 Resumo rápido de presets:
 - `ci-minimal`: fluxo leve para CI geral.
 - `ci-audit`: rastreia execucao e escrita de artefato.
@@ -126,6 +140,8 @@ Observacoes:
 - Use `--fail-on-status-preset` para aplicar gate por politica pronta: `strict` (needs-input + blocked) ou `security` (apenas blocked).
 - Use o release-check para executar validacoes finais e produzir um relatorio unico de prontidao (`ready`/`blocked`).
 - Use o pr-summary para converter o release-check em texto pronto para a descricao da draft PR.
+- Use `pipeline:ollama` para integrar IA local via API do Ollama (padrao: <http://127.0.0.1:11434>).
+- Em ambiente sem Ollama disponivel, `pipeline:test-ollama` continua valido por usar servidor mock local nos testes.
 
 Comando de teste automatizado do modo NDJSON:
 

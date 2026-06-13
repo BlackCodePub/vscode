@@ -88,6 +88,31 @@ Exemplo com preset de gate de status para CI:
 node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --fail-on-status-preset strict
 ```
 
+## Integracao com IA Local (Ollama)
+
+Prerequisito (Windows):
+
+```bash
+winget install --id Ollama.Ollama -e
+```
+
+Subir servico e baixar modelo:
+
+```bash
+ollama serve
+ollama pull llama3.1:8b
+```
+
+Executar pipeline MVP1 usando Ollama local:
+
+```bash
+npm --prefix .github/nb-code run pipeline:ollama -- --request .github/nb-code/examples/request.sample.json --model llama3.1:8b
+```
+
+Opcao de fallback:
+- Sem `--strict-ollama`, falhas de conectividade/modelo aplicam fallback deterministico e mantem response valido no contrato.
+- Com `--strict-ollama`, o comando falha com exit code `4` se a inferencia local nao concluir.
+
 Resultado:
 - Valida request e response pelos schemas em `contracts/*.schema.json`.
 - Aplica gate basico de seguranca (segredos e area sensivel).
@@ -121,6 +146,12 @@ Suite completa de regressao do pipeline:
 
 ```bash
 npm --prefix .github/nb-code run pipeline:test
+```
+
+Teste isolado da integracao Ollama (mock HTTP local):
+
+```bash
+npm --prefix .github/nb-code run pipeline:test-ollama
 ```
 
 Checklist final de release MVP1 (com relatorio estruturado):

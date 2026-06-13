@@ -14,9 +14,11 @@
     "pipeline:test-fail-on-status": "node --experimental-strip-types ./scripts/mvp1-fail-on-status-test.ts",
     "pipeline:test-release-check": "node --experimental-strip-types ./scripts/mvp1-release-check-test.ts",
     "pipeline:test-pr-summary": "node --experimental-strip-types ./scripts/mvp1-pr-summary-test.ts",
-    "pipeline:test": "npm run pipeline:test-negative && npm run pipeline:test-regression && npm run pipeline:test-ci-report && npm run pipeline:test-validate-only && npm run pipeline:test-ndjson && npm run pipeline:test-fail-on-status && npm run pipeline:test-release-check && npm run pipeline:test-pr-summary",
+    "pipeline:test-ollama": "node --experimental-strip-types ./scripts/mvp1-ollama-test.ts",
+    "pipeline:test": "npm run pipeline:test-negative && npm run pipeline:test-regression && npm run pipeline:test-ci-report && npm run pipeline:test-validate-only && npm run pipeline:test-ndjson && npm run pipeline:test-fail-on-status && npm run pipeline:test-release-check && npm run pipeline:test-pr-summary && npm run pipeline:test-ollama",
     "pipeline:release-check": "node --experimental-strip-types ./scripts/mvp1-release-check.ts",
-    "pipeline:pr-summary": "node --experimental-strip-types ./scripts/mvp1-pr-summary.ts"
+    "pipeline:pr-summary": "node --experimental-strip-types ./scripts/mvp1-pr-summary.ts",
+    "pipeline:ollama": "node --experimental-strip-types ./scripts/mvp1-ollama-pipeline.ts"
   },
   "dependencies": {
     "ajv": "^8.17.1"
