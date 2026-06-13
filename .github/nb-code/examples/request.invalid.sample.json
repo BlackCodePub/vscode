@@ -1,0 +1,10 @@
+{
+  "requestId": "mvp1-invalid-001",
+  "taskType": "code",
+  "goal": "curto",
+  "context": {
+    "currentFile": ".github/nb-code/scripts/mvp1-pipeline.ts",
+    "selectedText": "",
+    "workspaceHints": []
+  }
+}

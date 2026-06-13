@@ -1,0 +1,38 @@
+{
+  "requestId": "mvp1-sample-001",
+  "status": "completed",
+  "summary": "Processamento MVP1 concluido com contrato de saida estruturado.",
+  "actions": [
+    {
+      "type": "analysis",
+      "target": ".github/nb-code/README.md",
+      "description": "Analisa o arquivo atual e define mudancas minimas para cumprir o objetivo."
+    },
+    {
+      "type": "edit",
+      "target": ".github/nb-code/README.md",
+      "description": "Aplica ajuste de documentacao alinhado ao objetivo informado."
+    }
+  ],
+  "validations": [
+    {
+      "name": "request-schema",
+      "result": "passed",
+      "details": "Estrutura minima de entrada validada."
+    },
+    {
+      "name": "security-gate",
+      "result": "passed",
+      "details": "Verificacao basica de segredos e area sensivel."
+    }
+  ],
+  "security": {
+    "secretsExposed": false,
+    "sensitiveAreaTouched": false,
+    "notes": ""
+  },
+  "nextSteps": [
+    "Executar validacoes tecnicas aplicaveis (build, type-check e testes).",
+    "Preparar resumo para revisao humana e draft PR."
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-06-13T20:02:18.256Z",
+  "project": "nb-code-mvp1",
+  "status": "ready",
+  "checks": [
+    {
+      "name": "required-files",
+      "result": "passed",
+      "details": "Arquivos obrigatorios encontrados (4)."
+    },
+    {
+      "name": "pipeline:test",
+      "result": "passed",
+      "details": "Suite pipeline:test executada com sucesso.",
+      "exitCode": 0
+    },
+    {
+      "name": "git-status:.github/nb-code",
+      "result": "passed",
+      "details": "Workspace .github/nb-code limpo para release."
+    }
+  ],
+  "summary": "Release-check MVP1 concluido com validacoes essenciais aprovadas.",
+  "nextSteps": [
+    "Atualizar a descricao do draft PR com os resultados deste release-check.",
+    "Prosseguir com revisao humana final e decisao de merge."
+  ]
+}

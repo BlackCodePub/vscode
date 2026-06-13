@@ -1,0 +1,18 @@
+{
+  "requestId": "mvp1-sample-001",
+  "taskType": "docs",
+  "goal": "Atualizar a documentacao do fluxo MVP1 com exemplos de entrada e saida.",
+  "constraints": [
+    "Nao alterar areas sensiveis",
+    "Manter mudancas pequenas e rastreaveis"
+  ],
+  "context": {
+    "currentFile": ".github/nb-code/README.md",
+    "selectedText": "## Fluxo MVP1",
+    "workspaceHints": [
+      ".github/nb-code/contracts/request.schema.json",
+      ".github/nb-code/contracts/response.schema.json"
+    ],
+    "gitDiffSummary": "Sem alteracoes no momento"
+  }
+}

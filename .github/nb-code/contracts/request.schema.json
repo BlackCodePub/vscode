@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nb-code.local/schemas/request.schema.json",
+  "title": "NB-Code Agent Request",
+  "description": "Contrato minimo de entrada para o fluxo MVP1 do agente NB-Code.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requestId",
+    "taskType",
+    "goal",
+    "context"
+  ],
+  "properties": {
+    "requestId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[a-zA-Z0-9._:-]+$"
+    },
+    "taskType": {
+      "type": "string",
+      "enum": [
+        "docs",
+        "code",
+        "refactor",
+        "review",
+        "setup"
+      ]
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 1000
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "default": []
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "currentFile",
+        "selectedText",
+        "workspaceHints"
+      ],
+      "properties": {
+        "currentFile": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "selectedText": {
+          "type": "string",
+          "maxLength": 20000,
+          "default": ""
+        },
+        "workspaceHints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "default": []
+        },
+        "gitDiffSummary": {
+          "type": "string",
+          "maxLength": 8000
+        }
+      }
+    }
+  }
+}
