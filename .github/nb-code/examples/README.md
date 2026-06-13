@@ -44,3 +44,16 @@ Comando de teste automatizado do relatorio:
 ```bash
 npm --prefix .github/nb-code run pipeline:test-ci-report
 ```
+
+## Modo Validate-Only
+Exemplo de execucao enxuta:
+
+```bash
+node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --validate-only
+```
+
+Comando de teste automatizado do modo validate-only:
+
+```bash
+npm --prefix .github/nb-code run pipeline:test-validate-only
+```

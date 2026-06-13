@@ -9,7 +9,8 @@
     "pipeline:test-negative": "node --experimental-strip-types ./scripts/mvp1-negative-test.ts",
     "pipeline:test-regression": "node --experimental-strip-types ./scripts/mvp1-regression-test.ts",
     "pipeline:test-ci-report": "node --experimental-strip-types ./scripts/mvp1-ci-report-test.ts",
-    "pipeline:test": "npm run pipeline:test-negative && npm run pipeline:test-regression && npm run pipeline:test-ci-report"
+    "pipeline:test-validate-only": "node --experimental-strip-types ./scripts/mvp1-validate-only-test.ts",
+    "pipeline:test": "npm run pipeline:test-negative && npm run pipeline:test-regression && npm run pipeline:test-ci-report && npm run pipeline:test-validate-only"
   },
   "dependencies": {
     "ajv": "^8.17.1"

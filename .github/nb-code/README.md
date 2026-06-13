@@ -40,11 +40,18 @@ Exemplo com relatorio para CI:
 node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --report .github/nb-code/examples/report.sample.json
 ```
 
+Exemplo em modo validate-only (sem output completo de response):
+
+```bash
+node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --validate-only
+```
+
 Resultado:
 - Valida request e response pelos schemas em `contracts/*.schema.json`.
 - Aplica gate basico de seguranca (segredos e area sensivel).
 - Retorna response padronizado com actions, validations e security.
 - Opcionalmente gera relatorio JSON de execucao para uso em CI (`--report`).
+- Opcionalmente roda em modo enxuto para CI com `--validate-only`.
 
 Teste negativo (request invalido):
 

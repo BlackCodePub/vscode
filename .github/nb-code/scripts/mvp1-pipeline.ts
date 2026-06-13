@@ -44,6 +44,7 @@ type ResponsePayload = {
 
 type ExecutionReport = {
 	timestamp: string;
+	mode: 'full' | 'validate-only';
 	requestPath?: string;
 	outputPath?: string;
 	reportPath?: string;
@@ -61,13 +62,26 @@ type ExecutionReport = {
 	security?: ResponsePayload['security'];
 };
 
+type ValidateOnlyPayload = {
+	mode: 'validate-only';
+	requestId: string;
+	status: ResponsePayload['status'];
+	outcome: 'success';
+	validations: {
+		requestSchema: 'passed';
+		responseSchema: 'passed';
+		securityGate: 'passed' | 'failed';
+	};
+	security: ResponsePayload['security'];
+};
+
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const contractsDir = resolve(scriptDir, '..', 'contracts');
 const requestSchemaPath = resolve(contractsDir, 'request.schema.json');
 const responseSchemaPath = resolve(contractsDir, 'response.schema.json');
 
 function parseArgs(argv) {
-	const args = { request: '', output: '', report: '' };
+	const args = { request: '', output: '', report: '', validateOnly: false };
 	for (let i = 2; i < argv.length; i++) {
 		const token = argv[i];
 		if ((token === '--request' || token === '-r') && argv[i + 1]) {
@@ -81,6 +95,9 @@ function parseArgs(argv) {
 		if ((token === '--report' || token === '-p') && argv[i + 1]) {
 			args.report = argv[++i];
 			continue;
+		}
+		if (token === '--validate-only' || token === '-v') {
+			args.validateOnly = true;
 		}
 	}
 	return args;
@@ -199,11 +216,29 @@ function buildResponse(request: RequestPayload): ResponsePayload {
 	return response;
 }
 
+function buildValidateOnlyPayload(response: ResponsePayload): ValidateOnlyPayload {
+	const securityGateResult = response.security.secretsExposed ? 'failed' : 'passed';
+	return {
+		mode: 'validate-only',
+		requestId: response.requestId,
+		status: response.status,
+		outcome: 'success',
+		validations: {
+			requestSchema: 'passed',
+			responseSchema: 'passed',
+			securityGate: securityGateResult
+		},
+		security: response.security
+	};
+}
+
 function main() {
 	const { validateRequest, validateResponse } = createSchemaValidators();
 	const args = parseArgs(process.argv);
+	const mode = args.validateOnly ? 'validate-only' : 'full';
 	const report: ExecutionReport = {
 		timestamp: new Date().toISOString(),
+		mode,
 		outcome: 'runtime-error',
 		exitCode: 99,
 		requestValidation: {
@@ -226,7 +261,7 @@ function main() {
 		if (reportPath) {
 			writeExecutionReport(reportPath, report);
 		}
-		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>]');
+		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>] [--validate-only]');
 		process.exit(1);
 	}
 
@@ -290,6 +325,19 @@ function main() {
 	report.exitCode = 0;
 	if (reportPath) {
 		writeExecutionReport(reportPath, report);
+	}
+
+	if (args.validateOnly) {
+		const validationOnlyPayload = buildValidateOnlyPayload(response);
+		const validationOutput = JSON.stringify(validationOnlyPayload, null, 2);
+		if (args.output) {
+			const outputPath = resolve(args.output);
+			writeFileSync(outputPath, validationOutput, 'utf-8');
+			console.log(`Resultado validate-only salvo em: ${outputPath}`);
+		}
+
+		console.log(validationOutput);
+		return;
 	}
 
 	const output = JSON.stringify(response, null, 2);
