@@ -46,12 +46,19 @@ Exemplo em modo validate-only (sem output completo de response):
 node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --validate-only
 ```
 
+Exemplo em modo NDJSON (logs estruturados para pipeline):
+
+```bash
+node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --ndjson
+```
+
 Resultado:
 - Valida request e response pelos schemas em `contracts/*.schema.json`.
 - Aplica gate basico de seguranca (segredos e area sensivel).
 - Retorna response padronizado com actions, validations e security.
 - Opcionalmente gera relatorio JSON de execucao para uso em CI (`--report`).
 - Opcionalmente roda em modo enxuto para CI com `--validate-only`.
+- Opcionalmente emite eventos estruturados em NDJSON com `--ndjson`.
 
 Teste negativo (request invalido):
 

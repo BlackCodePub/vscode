@@ -81,7 +81,7 @@ const requestSchemaPath = resolve(contractsDir, 'request.schema.json');
 const responseSchemaPath = resolve(contractsDir, 'response.schema.json');
 
 function parseArgs(argv) {
-	const args = { request: '', output: '', report: '', validateOnly: false };
+	const args = { request: '', output: '', report: '', validateOnly: false, ndjson: false };
 	for (let i = 2; i < argv.length; i++) {
 		const token = argv[i];
 		if ((token === '--request' || token === '-r') && argv[i + 1]) {
@@ -98,6 +98,10 @@ function parseArgs(argv) {
 		}
 		if (token === '--validate-only' || token === '-v') {
 			args.validateOnly = true;
+			continue;
+		}
+		if (token === '--ndjson' || token === '-n') {
+			args.ndjson = true;
 		}
 	}
 	return args;
@@ -110,6 +114,16 @@ function readJsonFile(path) {
 
 function writeExecutionReport(reportPath: string, report: ExecutionReport) {
 	writeFileSync(reportPath, JSON.stringify(report, null, 2), 'utf-8');
+}
+
+function emitNdjsonLine(payload: unknown) {
+	process.stdout.write(`${JSON.stringify(payload)}\n`);
+}
+
+function emitExecutionReport(args: { ndjson: boolean }, report: ExecutionReport) {
+	if (args.ndjson) {
+		emitNdjsonLine({ event: 'execution-report', data: report });
+	}
 }
 
 function formatSchemaErrors(errors: unknown[] | null | undefined) {
@@ -261,7 +275,8 @@ function main() {
 		if (reportPath) {
 			writeExecutionReport(reportPath, report);
 		}
-		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>] [--validate-only]');
+		emitExecutionReport(args, report);
+		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>] [--validate-only] [--ndjson]');
 		process.exit(1);
 	}
 
@@ -282,6 +297,7 @@ function main() {
 		if (reportPath) {
 			writeExecutionReport(reportPath, report);
 		}
+		emitExecutionReport(args, report);
 		console.error('Falha na validacao do request (schema):');
 		for (const error of requestErrors) {
 			console.error(`- ${error}`);
@@ -308,6 +324,7 @@ function main() {
 		if (reportPath) {
 			writeExecutionReport(reportPath, report);
 		}
+		emitExecutionReport(args, report);
 		console.error('Falha na validacao do response (schema):');
 		for (const error of responseErrors) {
 			console.error(`- ${error}`);
@@ -326,6 +343,7 @@ function main() {
 	if (reportPath) {
 		writeExecutionReport(reportPath, report);
 	}
+	emitExecutionReport(args, report);
 
 	if (args.validateOnly) {
 		const validationOnlyPayload = buildValidateOnlyPayload(response);
@@ -333,10 +351,18 @@ function main() {
 		if (args.output) {
 			const outputPath = resolve(args.output);
 			writeFileSync(outputPath, validationOutput, 'utf-8');
-			console.log(`Resultado validate-only salvo em: ${outputPath}`);
+			if (args.ndjson) {
+				emitNdjsonLine({ event: 'output-written', mode: 'validate-only', path: outputPath });
+			} else {
+				console.log(`Resultado validate-only salvo em: ${outputPath}`);
+			}
 		}
 
-		console.log(validationOutput);
+		if (args.ndjson) {
+			emitNdjsonLine({ event: 'validate-only-result', data: validationOnlyPayload });
+		} else {
+			console.log(validationOutput);
+		}
 		return;
 	}
 
@@ -344,10 +370,18 @@ function main() {
 	if (args.output) {
 		const outputPath = resolve(args.output);
 		writeFileSync(outputPath, output, 'utf-8');
-		console.log(`Response salvo em: ${outputPath}`);
+		if (args.ndjson) {
+			emitNdjsonLine({ event: 'output-written', mode: 'full', path: outputPath });
+		} else {
+			console.log(`Response salvo em: ${outputPath}`);
+		}
 	}
 
-	console.log(output);
+	if (args.ndjson) {
+		emitNdjsonLine({ event: 'response', data: response });
+	} else {
+		console.log(output);
+	}
 }
 
 main();

@@ -57,3 +57,16 @@ Comando de teste automatizado do modo validate-only:
 ```bash
 npm --prefix .github/nb-code run pipeline:test-validate-only
 ```
+
+## Modo NDJSON
+Exemplo de execucao com eventos estruturados:
+
+```bash
+node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --ndjson
+```
+
+Comando de teste automatizado do modo NDJSON:
+
+```bash
+npm --prefix .github/nb-code run pipeline:test-ndjson
+```
