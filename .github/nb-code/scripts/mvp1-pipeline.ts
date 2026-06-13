@@ -9,6 +9,7 @@ type JsonObject = Record<string, unknown>;
 
 type NdjsonEventName = 'execution-report' | 'response' | 'validate-only-result' | 'output-written';
 type NdjsonPresetName = 'ci-minimal' | 'ci-audit' | 'ci-debug';
+type FailOnStatusPresetName = 'strict' | 'security';
 
 type RequestPayload = {
 	requestId: string;
@@ -91,6 +92,10 @@ const ndjsonPresets: Record<NdjsonPresetName, readonly NdjsonEventName[]> = {
 	'ci-audit': ['execution-report', 'output-written'],
 	'ci-debug': allowedNdjsonEvents
 };
+const failOnStatusPresets: Record<FailOnStatusPresetName, readonly ResponseStatus[]> = {
+	strict: ['needs-input', 'blocked'],
+	security: ['blocked']
+};
 
 function parseArgs(argv) {
 	const args = {
@@ -102,6 +107,8 @@ function parseArgs(argv) {
 		noNdjsonHints: false,
 		failOnStatusRaw: '',
 		failOnStatusProvided: false,
+		failOnStatusPresetRaw: '',
+		failOnStatusPresetProvided: false,
 		eventsRaw: '',
 		eventsPresetRaw: ''
 	};
@@ -135,6 +142,13 @@ function parseArgs(argv) {
 			args.failOnStatusProvided = true;
 			if (argv[i + 1]) {
 				args.failOnStatusRaw = argv[++i];
+			}
+			continue;
+		}
+		if (token === '--fail-on-status-preset' || token === '-F') {
+			args.failOnStatusPresetProvided = true;
+			if (argv[i + 1]) {
+				args.failOnStatusPresetRaw = argv[++i];
 			}
 			continue;
 		}
@@ -209,6 +223,20 @@ function parseFailOnStatus(raw: string): { filter?: Set<ResponseStatus>; error?:
 	}
 
 	return { filter: new Set(requested as ResponseStatus[]) };
+}
+
+function parseFailOnStatusPreset(raw: string): { filter?: Set<ResponseStatus>; error?: string } {
+	const preset = raw.trim();
+	if (!preset) {
+		return { error: 'Parametro --fail-on-status-preset vazio. Use strict ou security.' };
+	}
+
+	if (!(preset in failOnStatusPresets)) {
+		return { error: `Preset invalido em --fail-on-status-preset: ${preset}. Permitidos: strict, security` };
+	}
+
+	const typedPreset = preset as FailOnStatusPresetName;
+	return { filter: new Set(failOnStatusPresets[typedPreset]) };
 }
 
 function readJsonFile(path) {
@@ -455,6 +483,16 @@ function main() {
 		process.exit(1);
 	}
 
+	if (args.failOnStatusProvided && args.failOnStatusPresetProvided) {
+		report.outcome = 'usage-error';
+		report.exitCode = 1;
+		if (reportPath) {
+			writeExecutionReport(reportPath, report);
+		}
+		console.error('Use apenas um entre --fail-on-status e --fail-on-status-preset.');
+		process.exit(1);
+	}
+
 	if (args.eventsRaw) {
 		const parsedFilter = parseNdjsonEventsFilter(args.eventsRaw);
 		if (parsedFilter.error) {
@@ -500,6 +538,21 @@ function main() {
 		failOnStatus = parsedFailOnStatus.filter;
 	}
 
+	if (args.failOnStatusPresetProvided) {
+		const parsedFailOnStatusPreset = parseFailOnStatusPreset(args.failOnStatusPresetRaw);
+		if (parsedFailOnStatusPreset.error) {
+			report.outcome = 'usage-error';
+			report.exitCode = 1;
+			if (reportPath) {
+				writeExecutionReport(reportPath, report);
+			}
+			console.error(parsedFailOnStatusPreset.error);
+			process.exit(1);
+		}
+
+		failOnStatus = parsedFailOnStatusPreset.filter;
+	}
+
 	const emitterArgs = {
 		ndjson: args.ndjson,
 		ndjsonEventsFilter
@@ -512,7 +565,7 @@ function main() {
 			writeExecutionReport(reportPath, report);
 		}
 		emitExecutionReport(emitterArgs, report);
-		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>] [--validate-only] [--ndjson] [--no-ndjson-hints] [--fail-on-status <completed|needs-input|blocked[,..]>] [--events <lista>] [--events-preset <ci-minimal|ci-audit|ci-debug>]');
+		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>] [--validate-only] [--ndjson] [--no-ndjson-hints] [--fail-on-status <completed|needs-input|blocked[,..]>] [--fail-on-status-preset <strict|security>] [--events <lista>] [--events-preset <ci-minimal|ci-audit|ci-debug>]');
 		process.exit(1);
 	}
 

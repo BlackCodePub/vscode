@@ -94,6 +94,51 @@ if (!invalidStatusRun.stderr.includes('Status(es) invalido(s) em --fail-on-statu
 	process.exit(1);
 }
 
+const strictPresetNeedsInputRun = runWithArgs(['--request', sensitiveRequest, '--fail-on-status-preset', 'strict']);
+if (strictPresetNeedsInputRun.status !== 4) {
+	console.error('Falha no preset strict: needs-input deveria retornar exit code 4.');
+	console.error(`Exit code recebido: ${strictPresetNeedsInputRun.status ?? 'null'}`);
+	console.error(strictPresetNeedsInputRun.stderr);
+	process.exit(1);
+}
+
+const securityPresetNeedsInputRun = runWithArgs(['--request', sensitiveRequest, '--fail-on-status-preset', 'security']);
+if (securityPresetNeedsInputRun.status !== 0) {
+	console.error('Falha no preset security: needs-input nao deveria falhar.');
+	console.error(securityPresetNeedsInputRun.stderr);
+	process.exit(1);
+}
+
+const securityPresetBlockedRun = runWithArgs(['--request', secretRequest, '--fail-on-status-preset', 'security']);
+if (securityPresetBlockedRun.status !== 4) {
+	console.error('Falha no preset security: blocked deveria retornar exit code 4.');
+	console.error(`Exit code recebido: ${securityPresetBlockedRun.status ?? 'null'}`);
+	console.error(securityPresetBlockedRun.stderr);
+	process.exit(1);
+}
+
+const invalidPresetRun = runWithArgs(['--request', sampleRequest, '--fail-on-status-preset', 'foo']);
+if (invalidPresetRun.status !== 1) {
+	console.error('Falha no parse de --fail-on-status-preset invalido: exit code esperado 1.');
+	process.exit(1);
+}
+if (!invalidPresetRun.stderr.includes('Preset invalido em --fail-on-status-preset: foo.')) {
+	console.error('Mensagem de erro para --fail-on-status-preset invalido nao encontrada.');
+	console.error(invalidPresetRun.stderr);
+	process.exit(1);
+}
+
+const conflictingGateRun = runWithArgs(['--request', sampleRequest, '--fail-on-status', 'blocked', '--fail-on-status-preset', 'strict']);
+if (conflictingGateRun.status !== 1) {
+	console.error('Falha no conflito de parametros de gate: exit code esperado 1.');
+	process.exit(1);
+}
+if (!conflictingGateRun.stderr.includes('Use apenas um entre --fail-on-status e --fail-on-status-preset.')) {
+	console.error('Mensagem de conflito entre --fail-on-status e --fail-on-status-preset nao encontrada.');
+	console.error(conflictingGateRun.stderr);
+	process.exit(1);
+}
+
 const tmpDir = mkdtempSync(resolve(tmpdir(), 'nb-code-fail-on-status-'));
 
 try {

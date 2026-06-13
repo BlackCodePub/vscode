@@ -82,6 +82,12 @@ Exemplo com gate de status para CI (falha se status for blocked ou needs-input):
 node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --fail-on-status blocked,needs-input
 ```
 
+Exemplo com preset de gate de status para CI:
+
+```bash
+node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --fail-on-status-preset strict
+```
+
 Resultado:
 - Valida request e response pelos schemas em `contracts/*.schema.json`.
 - Aplica gate basico de seguranca (segredos e area sensivel).
@@ -95,6 +101,7 @@ Resultado:
 - Combinacoes subotimas (ex.: `--output` sem `output-written`) geram aviso em `stderr`.
 - Use `--no-ndjson-hints` para silenciar recomendacoes e avisos NDJSON em `stderr`.
 - Use `--fail-on-status` para transformar status de response em falha de pipeline (exit code `4`).
+- Use `--fail-on-status-preset` para gate rapido por politica (`strict` ou `security`).
 
 ## Presets NDJSON Recomendados
 
