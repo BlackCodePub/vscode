@@ -121,14 +121,20 @@ function buildPipelineTestsCheck(skipTests: boolean): ReleaseCheck {
 		};
 	}
 
-	const npmExecutable = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-	const run = spawnSync(npmExecutable, ['run', 'pipeline:test'], {
-		cwd: nbCodeDir,
-		encoding: 'utf-8'
-	});
+	const npmExecPath = process.env.npm_execpath;
+	const run = npmExecPath
+		? spawnSync(process.execPath, [npmExecPath, 'run', 'pipeline:test'], {
+			cwd: nbCodeDir,
+			encoding: 'utf-8'
+		})
+		: spawnSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'pipeline:test'], {
+			cwd: nbCodeDir,
+			encoding: 'utf-8'
+		});
 
 	if ((run.status ?? 1) !== 0) {
-		const outputSummary = (run.stderr || run.stdout || '').trim().split('\n').slice(-8).join(' | ');
+		const executionError = run.error ? `Erro de execucao: ${run.error.message}` : '';
+		const outputSummary = (run.stderr || run.stdout || executionError).trim().split('\n').slice(-8).join(' | ');
 		return {
 			name: 'pipeline:test',
 			result: 'failed',
