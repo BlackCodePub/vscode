@@ -45,13 +45,15 @@ type ResponsePayload = {
 	nextSteps?: string[];
 };
 
+type ResponseStatus = ResponsePayload['status'];
+
 type ExecutionReport = {
 	timestamp: string;
 	mode: 'full' | 'validate-only';
 	requestPath?: string;
 	outputPath?: string;
 	reportPath?: string;
-	outcome: 'success' | 'usage-error' | 'request-invalid' | 'response-invalid' | 'runtime-error';
+	outcome: 'success' | 'usage-error' | 'request-invalid' | 'response-invalid' | 'runtime-error' | 'status-gate-failed';
 	exitCode: number;
 	requestValidation: {
 		valid: boolean;
@@ -83,6 +85,7 @@ const contractsDir = resolve(scriptDir, '..', 'contracts');
 const requestSchemaPath = resolve(contractsDir, 'request.schema.json');
 const responseSchemaPath = resolve(contractsDir, 'response.schema.json');
 const allowedNdjsonEvents = ['execution-report', 'response', 'validate-only-result', 'output-written'] as const;
+const allowedResponseStatuses = ['completed', 'needs-input', 'blocked'] as const;
 const ndjsonPresets: Record<NdjsonPresetName, readonly NdjsonEventName[]> = {
 	'ci-minimal': ['execution-report', 'response', 'validate-only-result'],
 	'ci-audit': ['execution-report', 'output-written'],
@@ -97,6 +100,8 @@ function parseArgs(argv) {
 		validateOnly: false,
 		ndjson: false,
 		noNdjsonHints: false,
+		failOnStatusRaw: '',
+		failOnStatusProvided: false,
 		eventsRaw: '',
 		eventsPresetRaw: ''
 	};
@@ -124,6 +129,13 @@ function parseArgs(argv) {
 		}
 		if (token === '--no-ndjson-hints') {
 			args.noNdjsonHints = true;
+			continue;
+		}
+		if (token === '--fail-on-status' || token === '-f') {
+			args.failOnStatusProvided = true;
+			if (argv[i + 1]) {
+				args.failOnStatusRaw = argv[++i];
+			}
 			continue;
 		}
 		if ((token === '--events' || token === '-e') && argv[i + 1]) {
@@ -173,6 +185,30 @@ function parseNdjsonPresetFilter(raw: string): { filter?: Set<NdjsonEventName>; 
 
 	const typedPreset = preset as NdjsonPresetName;
 	return { filter: new Set(ndjsonPresets[typedPreset]) };
+}
+
+function parseFailOnStatus(raw: string): { filter?: Set<ResponseStatus>; error?: string } {
+	if (!raw.trim()) {
+		return { error: 'Parametro --fail-on-status vazio. Use completed, needs-input e/ou blocked.' };
+	}
+
+	const requested = raw
+		.split(',')
+		.map(item => item.trim())
+		.filter(Boolean);
+
+	if (requested.length === 0) {
+		return { error: 'Parametro --fail-on-status vazio. Use completed, needs-input e/ou blocked.' };
+	}
+
+	const invalid = requested.filter(item => !allowedResponseStatuses.includes(item as ResponseStatus));
+	if (invalid.length > 0) {
+		return {
+			error: `Status(es) invalido(s) em --fail-on-status: ${invalid.join(', ')}. Permitidos: ${allowedResponseStatuses.join(', ')}`
+		};
+	}
+
+	return { filter: new Set(requested as ResponseStatus[]) };
 }
 
 function readJsonFile(path) {
@@ -367,6 +403,7 @@ function main() {
 	const { validateRequest, validateResponse } = createSchemaValidators();
 	const args = parseArgs(process.argv);
 	let ndjsonEventsFilter: Set<NdjsonEventName> | undefined;
+	let failOnStatus: Set<ResponseStatus> | undefined;
 	const mode = args.validateOnly ? 'validate-only' : 'full';
 	const report: ExecutionReport = {
 		timestamp: new Date().toISOString(),
@@ -448,6 +485,21 @@ function main() {
 		ndjsonEventsFilter = parsedPreset.filter;
 	}
 
+	if (args.failOnStatusProvided) {
+		const parsedFailOnStatus = parseFailOnStatus(args.failOnStatusRaw);
+		if (parsedFailOnStatus.error) {
+			report.outcome = 'usage-error';
+			report.exitCode = 1;
+			if (reportPath) {
+				writeExecutionReport(reportPath, report);
+			}
+			console.error(parsedFailOnStatus.error);
+			process.exit(1);
+		}
+
+		failOnStatus = parsedFailOnStatus.filter;
+	}
+
 	const emitterArgs = {
 		ndjson: args.ndjson,
 		ndjsonEventsFilter
@@ -460,7 +512,7 @@ function main() {
 			writeExecutionReport(reportPath, report);
 		}
 		emitExecutionReport(emitterArgs, report);
-		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>] [--validate-only] [--ndjson] [--no-ndjson-hints] [--events <lista>] [--events-preset <ci-minimal|ci-audit|ci-debug>]');
+		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>] [--validate-only] [--ndjson] [--no-ndjson-hints] [--fail-on-status <completed|needs-input|blocked[,..]>] [--events <lista>] [--events-preset <ci-minimal|ci-audit|ci-debug>]');
 		process.exit(1);
 	}
 
@@ -536,8 +588,14 @@ function main() {
 	};
 	report.responseStatus = response.status;
 	report.security = response.security;
-	report.outcome = 'success';
-	report.exitCode = 0;
+	const statusGateTriggered = Boolean(failOnStatus && failOnStatus.has(response.status));
+	if (statusGateTriggered) {
+		report.outcome = 'status-gate-failed';
+		report.exitCode = 4;
+	} else {
+		report.outcome = 'success';
+		report.exitCode = 0;
+	}
 	if (reportPath) {
 		writeExecutionReport(reportPath, report);
 	}
@@ -561,6 +619,11 @@ function main() {
 		} else {
 			console.log(validationOutput);
 		}
+
+		if (statusGateTriggered) {
+			console.error(`Status do response bloqueado por --fail-on-status: ${response.status}.`);
+			process.exit(4);
+		}
 		return;
 	}
 
@@ -579,6 +642,11 @@ function main() {
 		emitNdjsonEvent(emitterArgs, 'response', { data: response });
 	} else {
 		console.log(output);
+	}
+
+	if (statusGateTriggered) {
+		console.error(`Status do response bloqueado por --fail-on-status: ${response.status}.`);
+		process.exit(4);
 	}
 }
 

@@ -89,6 +89,12 @@ Exemplo com hints NDJSON silenciados:
 node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --ndjson --no-ndjson-hints
 ```
 
+Exemplo de gate de status (falha no CI quando response ficar em blocked ou needs-input):
+
+```bash
+node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.secret.sample.json --fail-on-status blocked,needs-input
+```
+
 Resumo rápido de presets:
 - `ci-minimal`: fluxo leve para CI geral.
 - `ci-audit`: rastreia execucao e escrita de artefato.
@@ -98,6 +104,7 @@ Observacoes:
 - Sem `--events`/`--events-preset`, o pipeline sugere preset recomendado em `stderr`.
 - Em combinacoes subotimas, o pipeline emite aviso em `stderr` com sugestao de ajuste.
 - Use `--no-ndjson-hints` para silenciar esses avisos/recomendacoes.
+- Use `--fail-on-status` para forcar falha de processo (exit code `4`) quando o status retornado estiver na lista configurada.
 
 Comando de teste automatizado do modo NDJSON:
 

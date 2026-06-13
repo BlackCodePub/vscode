@@ -11,7 +11,8 @@
     "pipeline:test-ci-report": "node --experimental-strip-types ./scripts/mvp1-ci-report-test.ts",
     "pipeline:test-validate-only": "node --experimental-strip-types ./scripts/mvp1-validate-only-test.ts",
     "pipeline:test-ndjson": "node --experimental-strip-types ./scripts/mvp1-ndjson-test.ts",
-    "pipeline:test": "npm run pipeline:test-negative && npm run pipeline:test-regression && npm run pipeline:test-ci-report && npm run pipeline:test-validate-only && npm run pipeline:test-ndjson"
+    "pipeline:test-fail-on-status": "node --experimental-strip-types ./scripts/mvp1-fail-on-status-test.ts",
+    "pipeline:test": "npm run pipeline:test-negative && npm run pipeline:test-regression && npm run pipeline:test-ci-report && npm run pipeline:test-validate-only && npm run pipeline:test-ndjson && npm run pipeline:test-fail-on-status"
   },
   "dependencies": {
     "ajv": "^8.17.1"
