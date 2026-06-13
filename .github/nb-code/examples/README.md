@@ -107,6 +107,12 @@ Exemplo de finalizacao com release-check e relatorio:
 npm --prefix .github/nb-code run pipeline:release-check -- --output .github/nb-code/examples/release-check.sample.json
 ```
 
+Exemplo de geracao de resumo para draft PR:
+
+```bash
+npm --prefix .github/nb-code run pipeline:pr-summary -- --report .github/nb-code/examples/release-check.sample.json --output .github/nb-code/examples/pr-summary.sample.md
+```
+
 Resumo rápido de presets:
 - `ci-minimal`: fluxo leve para CI geral.
 - `ci-audit`: rastreia execucao e escrita de artefato.
@@ -119,6 +125,7 @@ Observacoes:
 - Use `--fail-on-status` para forcar falha de processo (exit code `4`) quando o status retornado estiver na lista configurada.
 - Use `--fail-on-status-preset` para aplicar gate por politica pronta: `strict` (needs-input + blocked) ou `security` (apenas blocked).
 - Use o release-check para executar validacoes finais e produzir um relatorio unico de prontidao (`ready`/`blocked`).
+- Use o pr-summary para converter o release-check em texto pronto para a descricao da draft PR.
 
 Comando de teste automatizado do modo NDJSON:
 

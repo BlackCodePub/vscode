@@ -135,6 +135,15 @@ Notas do release-check:
 - Gera relatorio JSON com status `ready` ou `blocked`.
 - Flags uteis para diagnostico local: `--skip-tests` e `--skip-dirty-check`.
 
+Gerador de resumo para descricao de draft PR (a partir do release-check):
+
+```bash
+npm --prefix .github/nb-code run pipeline:pr-summary -- --report .github/nb-code/examples/release-check.sample.json --output .github/nb-code/examples/pr-summary.sample.md
+```
+
+Checklist de revisao humana para fechamento de PR:
+- `checklists/mvp1-pr-review-checklist.md`
+
 ## Regras criticas
 - Nunca expor segredos, tokens ou credenciais.
 - Nao aprovar merge automaticamente.
