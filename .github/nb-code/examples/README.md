@@ -88,6 +88,10 @@ Resumo rápido de presets:
 - `ci-audit`: rastreia execucao e escrita de artefato.
 - `ci-debug`: visao completa para diagnostico.
 
+Observacoes:
+- Sem `--events`/`--events-preset`, o pipeline sugere preset recomendado em `stderr`.
+- Em combinacoes subotimas, o pipeline emite aviso em `stderr` com sugestao de ajuste.
+
 Comando de teste automatizado do modo NDJSON:
 
 ```bash

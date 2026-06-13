@@ -205,6 +205,39 @@ function emitExecutionReport(args: { ndjson: boolean; ndjsonEventsFilter?: Set<N
 	emitNdjsonEvent(args, 'execution-report', { data: report });
 }
 
+function buildNdjsonHints(input: {
+	ndjson: boolean;
+	hasExplicitEvents: boolean;
+	hasExplicitPreset: boolean;
+	hasOutput: boolean;
+	validateOnly: boolean;
+	ndjsonEventsFilter?: Set<NdjsonEventName>;
+}) {
+	const hints: string[] = [];
+	if (!input.ndjson) {
+		return hints;
+	}
+
+	if (!input.hasExplicitEvents && !input.hasExplicitPreset) {
+		if (input.hasOutput) {
+			hints.push('Recomendacao NDJSON: use --events-preset ci-audit quando --output estiver ativo.');
+		} else {
+			hints.push('Recomendacao NDJSON: use --events-preset ci-minimal para pipelines padrao.');
+		}
+		return hints;
+	}
+
+	if (input.hasOutput && input.ndjsonEventsFilter && !input.ndjsonEventsFilter.has('output-written')) {
+		hints.push('Combinacao NDJSON possivelmente subotima: --output ativo sem evento output-written. Considere ci-audit ou inclua output-written em --events.');
+	}
+
+	if (input.validateOnly && input.ndjsonEventsFilter && !input.ndjsonEventsFilter.has('validate-only-result')) {
+		hints.push('Combinacao NDJSON possivelmente subotima: --validate-only ativo sem evento validate-only-result. Considere ci-minimal ou inclua validate-only-result em --events.');
+	}
+
+	return hints;
+}
+
 function formatSchemaErrors(errors: unknown[] | null | undefined) {
 	if (!errors || errors.length === 0) {
 		return ['Erro de validacao sem detalhes.'];
@@ -424,6 +457,18 @@ function main() {
 		emitExecutionReport(emitterArgs, report);
 		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>] [--validate-only] [--ndjson] [--events <lista>] [--events-preset <ci-minimal|ci-audit|ci-debug>]');
 		process.exit(1);
+	}
+
+	const ndjsonHints = buildNdjsonHints({
+		ndjson: args.ndjson,
+		hasExplicitEvents: Boolean(args.eventsRaw),
+		hasExplicitPreset: Boolean(args.eventsPresetRaw),
+		hasOutput: Boolean(args.output),
+		validateOnly: args.validateOnly,
+		ndjsonEventsFilter
+	});
+	for (const hint of ndjsonHints) {
+		console.error(hint);
 	}
 
 	const requestPath = resolve(args.request);

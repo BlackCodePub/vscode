@@ -79,6 +79,8 @@ Resultado:
 - Opcionalmente emite eventos estruturados em NDJSON com `--ndjson`.
 - No modo NDJSON, permite filtrar eventos com `--events` (lista separada por virgula).
 - No modo NDJSON, permite presets de eventos com `--events-preset` (`ci-minimal`, `ci-audit` ou `ci-debug`).
+- Se `--ndjson` for usado sem `--events`/`--events-preset`, o pipeline emite recomendacao automatica em `stderr`.
+- Combinacoes subotimas (ex.: `--output` sem `output-written`) geram aviso em `stderr`.
 
 ## Presets NDJSON Recomendados
 

@@ -40,6 +40,11 @@ if (successRun.status !== 0) {
 	console.error(successRun.stderr);
 	process.exit(1);
 }
+if (!successRun.stderr.includes('Recomendacao NDJSON: use --events-preset ci-minimal')) {
+	console.error('Recomendacao automatica de ci-minimal nao encontrada em modo NDJSON padrao.');
+	console.error(successRun.stderr);
+	process.exit(1);
+}
 
 const successLines = parseNdjsonLines(successRun.stdout);
 if (successLines.length < 2) {
@@ -89,6 +94,19 @@ if (presetMinimalLines[0]?.event !== 'execution-report' || presetMinimalLines[1]
 	process.exit(1);
 }
 
+const outputWithNoPresetPath = resolve(tempDir, 'no-preset-output.json');
+const outputWithNoPresetRun = runWithArgs(['--request', sampleRequest, '--ndjson', '--output', outputWithNoPresetPath]);
+if (outputWithNoPresetRun.status !== 0) {
+	console.error('Falha no teste NDJSON com --output sem preset.');
+	console.error(outputWithNoPresetRun.stderr);
+	process.exit(1);
+}
+if (!outputWithNoPresetRun.stderr.includes('Recomendacao NDJSON: use --events-preset ci-audit')) {
+	console.error('Recomendacao automatica de ci-audit nao encontrada para --output sem preset.');
+	console.error(outputWithNoPresetRun.stderr);
+	process.exit(1);
+}
+
 const auditOutputPath = resolve(tempDir, 'audit-output.json');
 const presetAuditRun = runWithArgs(['--request', sampleRequest, '--ndjson', '--events-preset', 'ci-audit', '--output', auditOutputPath]);
 if (presetAuditRun.status !== 0) {
@@ -106,6 +124,19 @@ if (presetAuditLines.length !== 2) {
 if (presetAuditLines[0]?.event !== 'execution-report' || presetAuditLines[1]?.event !== 'output-written') {
 	console.error('Preset ci-audit invalido: eventos inesperados no modo full com --output.');
 	console.error(presetAuditRun.stdout);
+	process.exit(1);
+}
+
+const outputWithMinimalPath = resolve(tempDir, 'minimal-output.json');
+const outputWithMinimalPresetRun = runWithArgs(['--request', sampleRequest, '--ndjson', '--events-preset', 'ci-minimal', '--output', outputWithMinimalPath]);
+if (outputWithMinimalPresetRun.status !== 0) {
+	console.error('Falha no teste NDJSON com preset ci-minimal e --output.');
+	console.error(outputWithMinimalPresetRun.stderr);
+	process.exit(1);
+}
+if (!outputWithMinimalPresetRun.stderr.includes('Combinacao NDJSON possivelmente subotima: --output ativo sem evento output-written.')) {
+	console.error('Warning esperado para preset ci-minimal com --output nao encontrado.');
+	console.error(outputWithMinimalPresetRun.stderr);
 	process.exit(1);
 }
 
@@ -143,6 +174,18 @@ if (presetMinimalValidateOnlyLines.length !== 2) {
 if (presetMinimalValidateOnlyLines[0]?.event !== 'execution-report' || presetMinimalValidateOnlyLines[1]?.event !== 'validate-only-result') {
 	console.error('Preset ci-minimal invalido: eventos inesperados no validate-only.');
 	console.error(presetMinimalValidateOnlyRun.stdout);
+	process.exit(1);
+}
+
+const validateOnlyWithAuditRun = runWithArgs(['--request', sampleRequest, '--validate-only', '--ndjson', '--events-preset', 'ci-audit']);
+if (validateOnlyWithAuditRun.status !== 0) {
+	console.error('Falha no teste NDJSON com preset ci-audit em validate-only.');
+	console.error(validateOnlyWithAuditRun.stderr);
+	process.exit(1);
+}
+if (!validateOnlyWithAuditRun.stderr.includes('Combinacao NDJSON possivelmente subotima: --validate-only ativo sem evento validate-only-result.')) {
+	console.error('Warning esperado para preset ci-audit em validate-only nao encontrado.');
+	console.error(validateOnlyWithAuditRun.stderr);
 	process.exit(1);
 }
 
