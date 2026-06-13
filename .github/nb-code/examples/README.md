@@ -21,3 +21,13 @@ Comando para validar a rejeicao:
 ```bash
 npm --prefix .github/nb-code run pipeline:test-negative
 ```
+
+## Requests de regressao
+- `request.sensitive.sample.json`: deve retornar `status=needs-input` e `sensitiveAreaTouched=true`.
+- `request.secret.sample.json`: deve retornar `status=blocked` e `secretsExposed=true`.
+
+Comando para validar a suite completa:
+
+```bash
+npm --prefix .github/nb-code run pipeline:test
+```

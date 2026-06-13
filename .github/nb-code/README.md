@@ -45,6 +45,12 @@ Teste negativo (request invalido):
 npm --prefix .github/nb-code run pipeline:test-negative
 ```
 
+Suite completa de regressao do pipeline:
+
+```bash
+npm --prefix .github/nb-code run pipeline:test
+```
+
 ## Regras criticas
 - Nunca expor segredos, tokens ou credenciais.
 - Nao aprovar merge automaticamente.
