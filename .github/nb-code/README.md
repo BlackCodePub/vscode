@@ -64,6 +64,12 @@ Exemplo com preset de eventos NDJSON:
 node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --ndjson --events-preset ci-minimal
 ```
 
+Exemplo com preset de auditoria NDJSON:
+
+```bash
+node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --output .github/nb-code/examples/response.sample.json --ndjson --events-preset ci-audit
+```
+
 Resultado:
 - Valida request e response pelos schemas em `contracts/*.schema.json`.
 - Aplica gate basico de seguranca (segredos e area sensivel).
@@ -72,7 +78,15 @@ Resultado:
 - Opcionalmente roda em modo enxuto para CI com `--validate-only`.
 - Opcionalmente emite eventos estruturados em NDJSON com `--ndjson`.
 - No modo NDJSON, permite filtrar eventos com `--events` (lista separada por virgula).
-- No modo NDJSON, permite presets de eventos com `--events-preset` (`ci-minimal` ou `ci-debug`).
+- No modo NDJSON, permite presets de eventos com `--events-preset` (`ci-minimal`, `ci-audit` ou `ci-debug`).
+
+## Presets NDJSON Recomendados
+
+| Preset | Eventos emitidos | Quando usar |
+|---|---|---|
+| `ci-minimal` | `execution-report`, `response` (ou `validate-only-result`) | Pipelines com necessidade de sinal claro de sucesso/falha e payload resumido |
+| `ci-audit` | `execution-report`, `output-written` | Pipelines de auditoria/rastreabilidade com artefato salvo em arquivo via `--output` |
+| `ci-debug` | Todos (`execution-report`, `response`/`validate-only-result`, `output-written`) | Diagnostico completo e troubleshooting de integrações |
 
 Teste negativo (request invalido):
 

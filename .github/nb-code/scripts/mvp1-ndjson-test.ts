@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -30,6 +32,7 @@ function runWithArgs(args: string[]) {
 
 const sampleRequest = resolve(scriptDir, '..', 'examples', 'request.sample.json');
 const invalidRequest = resolve(scriptDir, '..', 'examples', 'request.invalid.sample.json');
+const tempDir = mkdtempSync(resolve(tmpdir(), 'nb-code-ndjson-'));
 
 const successRun = runWithArgs(['--request', sampleRequest, '--ndjson']);
 if (successRun.status !== 0) {
@@ -83,6 +86,26 @@ if (presetMinimalLines.length !== 2) {
 if (presetMinimalLines[0]?.event !== 'execution-report' || presetMinimalLines[1]?.event !== 'response') {
 	console.error('Preset ci-minimal invalido: eventos inesperados no modo full.');
 	console.error(presetMinimalRun.stdout);
+	process.exit(1);
+}
+
+const auditOutputPath = resolve(tempDir, 'audit-output.json');
+const presetAuditRun = runWithArgs(['--request', sampleRequest, '--ndjson', '--events-preset', 'ci-audit', '--output', auditOutputPath]);
+if (presetAuditRun.status !== 0) {
+	console.error('Falha no teste NDJSON com preset ci-audit.');
+	console.error(presetAuditRun.stderr);
+	process.exit(1);
+}
+
+const presetAuditLines = parseNdjsonLines(presetAuditRun.stdout);
+if (presetAuditLines.length !== 2) {
+	console.error('Preset ci-audit invalido: esperado 2 eventos no modo full com --output.');
+	console.error(presetAuditRun.stdout);
+	process.exit(1);
+}
+if (presetAuditLines[0]?.event !== 'execution-report' || presetAuditLines[1]?.event !== 'output-written') {
+	console.error('Preset ci-audit invalido: eventos inesperados no modo full com --output.');
+	console.error(presetAuditRun.stdout);
 	process.exit(1);
 }
 
@@ -175,6 +198,11 @@ if (!invalidPresetRun.stderr.includes('Preset NDJSON invalido: foo.')) {
 	console.error(invalidPresetRun.stderr);
 	process.exit(1);
 }
+if (!invalidPresetRun.stderr.includes('Permitidos: ci-minimal, ci-audit, ci-debug')) {
+	console.error('Mensagem de presets permitidos nao contem ci-audit.');
+	console.error(invalidPresetRun.stderr);
+	process.exit(1);
+}
 
 const invalidPresetUsageRun = runWithArgs(['--request', sampleRequest, '--events-preset', 'ci-minimal']);
 if (invalidPresetUsageRun.status !== 1) {
@@ -198,4 +226,6 @@ if (!conflictingFiltersRun.stderr.includes('Use apenas um entre --events e --eve
 	process.exit(1);
 }
 
-console.log('Teste NDJSON passou para cenarios full, filtros, presets, validate-only, request invalido e erros de uso.');
+rmSync(tempDir, { recursive: true, force: true });
+
+console.log('Teste NDJSON passou para cenarios full, filtros, presets (incluindo ci-audit), validate-only, request invalido e erros de uso.');

@@ -8,7 +8,7 @@ import Ajv2020 from 'ajv/dist/2020.js';
 type JsonObject = Record<string, unknown>;
 
 type NdjsonEventName = 'execution-report' | 'response' | 'validate-only-result' | 'output-written';
-type NdjsonPresetName = 'ci-minimal' | 'ci-debug';
+type NdjsonPresetName = 'ci-minimal' | 'ci-audit' | 'ci-debug';
 
 type RequestPayload = {
 	requestId: string;
@@ -85,6 +85,7 @@ const responseSchemaPath = resolve(contractsDir, 'response.schema.json');
 const allowedNdjsonEvents = ['execution-report', 'response', 'validate-only-result', 'output-written'] as const;
 const ndjsonPresets: Record<NdjsonPresetName, readonly NdjsonEventName[]> = {
 	'ci-minimal': ['execution-report', 'response', 'validate-only-result'],
+	'ci-audit': ['execution-report', 'output-written'],
 	'ci-debug': allowedNdjsonEvents
 };
 
@@ -158,11 +159,11 @@ function parseNdjsonEventsFilter(raw: string): { filter?: Set<NdjsonEventName>; 
 function parseNdjsonPresetFilter(raw: string): { filter?: Set<NdjsonEventName>; error?: string } {
 	const preset = raw.trim();
 	if (!preset) {
-		return { error: 'Parametro --events-preset vazio. Use ci-minimal ou ci-debug.' };
+		return { error: 'Parametro --events-preset vazio. Use ci-minimal, ci-audit ou ci-debug.' };
 	}
 
 	if (!(preset in ndjsonPresets)) {
-		return { error: `Preset NDJSON invalido: ${preset}. Permitidos: ci-minimal, ci-debug` };
+		return { error: `Preset NDJSON invalido: ${preset}. Permitidos: ci-minimal, ci-audit, ci-debug` };
 	}
 
 	const typedPreset = preset as NdjsonPresetName;
@@ -421,7 +422,7 @@ function main() {
 			writeExecutionReport(reportPath, report);
 		}
 		emitExecutionReport(emitterArgs, report);
-		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>] [--validate-only] [--ndjson] [--events <lista>] [--events-preset <ci-minimal|ci-debug>]');
+		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>] [--validate-only] [--ndjson] [--events <lista>] [--events-preset <ci-minimal|ci-audit|ci-debug>]');
 		process.exit(1);
 	}
 
