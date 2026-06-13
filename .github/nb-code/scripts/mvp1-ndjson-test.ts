@@ -46,6 +46,18 @@ if (!successRun.stderr.includes('Recomendacao NDJSON: use --events-preset ci-min
 	process.exit(1);
 }
 
+const successSilentHintsRun = runWithArgs(['--request', sampleRequest, '--ndjson', '--no-ndjson-hints']);
+if (successSilentHintsRun.status !== 0) {
+	console.error('Falha no teste NDJSON com --no-ndjson-hints em modo padrao.');
+	console.error(successSilentHintsRun.stderr);
+	process.exit(1);
+}
+if (successSilentHintsRun.stderr.includes('Recomendacao NDJSON:')) {
+	console.error('Hints NDJSON deveriam estar silenciados com --no-ndjson-hints.');
+	console.error(successSilentHintsRun.stderr);
+	process.exit(1);
+}
+
 const successLines = parseNdjsonLines(successRun.stdout);
 if (successLines.length < 2) {
 	console.error('Saida NDJSON invalida: esperado pelo menos 2 eventos em sucesso.');
@@ -107,6 +119,19 @@ if (!outputWithNoPresetRun.stderr.includes('Recomendacao NDJSON: use --events-pr
 	process.exit(1);
 }
 
+const outputWithNoPresetSilentHintsPath = resolve(tempDir, 'no-preset-output-silent.json');
+const outputWithNoPresetSilentHintsRun = runWithArgs(['--request', sampleRequest, '--ndjson', '--output', outputWithNoPresetSilentHintsPath, '--no-ndjson-hints']);
+if (outputWithNoPresetSilentHintsRun.status !== 0) {
+	console.error('Falha no teste NDJSON com --output sem preset e hints silenciados.');
+	console.error(outputWithNoPresetSilentHintsRun.stderr);
+	process.exit(1);
+}
+if (outputWithNoPresetSilentHintsRun.stderr.includes('Recomendacao NDJSON: use --events-preset ci-audit')) {
+	console.error('Recomendacao de ci-audit deveria estar silenciada com --no-ndjson-hints.');
+	console.error(outputWithNoPresetSilentHintsRun.stderr);
+	process.exit(1);
+}
+
 const auditOutputPath = resolve(tempDir, 'audit-output.json');
 const presetAuditRun = runWithArgs(['--request', sampleRequest, '--ndjson', '--events-preset', 'ci-audit', '--output', auditOutputPath]);
 if (presetAuditRun.status !== 0) {
@@ -137,6 +162,19 @@ if (outputWithMinimalPresetRun.status !== 0) {
 if (!outputWithMinimalPresetRun.stderr.includes('Combinacao NDJSON possivelmente subotima: --output ativo sem evento output-written.')) {
 	console.error('Warning esperado para preset ci-minimal com --output nao encontrado.');
 	console.error(outputWithMinimalPresetRun.stderr);
+	process.exit(1);
+}
+
+const outputWithMinimalSilentPath = resolve(tempDir, 'minimal-output-silent.json');
+const outputWithMinimalSilentRun = runWithArgs(['--request', sampleRequest, '--ndjson', '--events-preset', 'ci-minimal', '--output', outputWithMinimalSilentPath, '--no-ndjson-hints']);
+if (outputWithMinimalSilentRun.status !== 0) {
+	console.error('Falha no teste NDJSON com preset ci-minimal e hints silenciados.');
+	console.error(outputWithMinimalSilentRun.stderr);
+	process.exit(1);
+}
+if (outputWithMinimalSilentRun.stderr.includes('Combinacao NDJSON possivelmente subotima: --output ativo sem evento output-written.')) {
+	console.error('Warning de combinacao subotima deveria estar silenciado com --no-ndjson-hints.');
+	console.error(outputWithMinimalSilentRun.stderr);
 	process.exit(1);
 }
 

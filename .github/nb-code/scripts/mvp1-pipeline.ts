@@ -96,6 +96,7 @@ function parseArgs(argv) {
 		report: '',
 		validateOnly: false,
 		ndjson: false,
+		noNdjsonHints: false,
 		eventsRaw: '',
 		eventsPresetRaw: ''
 	};
@@ -119,6 +120,10 @@ function parseArgs(argv) {
 		}
 		if (token === '--ndjson' || token === '-n') {
 			args.ndjson = true;
+			continue;
+		}
+		if (token === '--no-ndjson-hints') {
+			args.noNdjsonHints = true;
 			continue;
 		}
 		if ((token === '--events' || token === '-e') && argv[i + 1]) {
@@ -455,20 +460,22 @@ function main() {
 			writeExecutionReport(reportPath, report);
 		}
 		emitExecutionReport(emitterArgs, report);
-		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>] [--validate-only] [--ndjson] [--events <lista>] [--events-preset <ci-minimal|ci-audit|ci-debug>]');
+		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>] [--validate-only] [--ndjson] [--no-ndjson-hints] [--events <lista>] [--events-preset <ci-minimal|ci-audit|ci-debug>]');
 		process.exit(1);
 	}
 
-	const ndjsonHints = buildNdjsonHints({
-		ndjson: args.ndjson,
-		hasExplicitEvents: Boolean(args.eventsRaw),
-		hasExplicitPreset: Boolean(args.eventsPresetRaw),
-		hasOutput: Boolean(args.output),
-		validateOnly: args.validateOnly,
-		ndjsonEventsFilter
-	});
-	for (const hint of ndjsonHints) {
-		console.error(hint);
+	if (!args.noNdjsonHints) {
+		const ndjsonHints = buildNdjsonHints({
+			ndjson: args.ndjson,
+			hasExplicitEvents: Boolean(args.eventsRaw),
+			hasExplicitPreset: Boolean(args.eventsPresetRaw),
+			hasOutput: Boolean(args.output),
+			validateOnly: args.validateOnly,
+			ndjsonEventsFilter
+		});
+		for (const hint of ndjsonHints) {
+			console.error(hint);
+		}
 	}
 
 	const requestPath = resolve(args.request);

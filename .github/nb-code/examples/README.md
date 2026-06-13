@@ -83,6 +83,12 @@ Exemplo de preset de auditoria NDJSON:
 node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --output .github/nb-code/examples/response.sample.json --ndjson --events-preset ci-audit
 ```
 
+Exemplo com hints NDJSON silenciados:
+
+```bash
+node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --ndjson --no-ndjson-hints
+```
+
 Resumo rápido de presets:
 - `ci-minimal`: fluxo leve para CI geral.
 - `ci-audit`: rastreia execucao e escrita de artefato.
@@ -91,6 +97,7 @@ Resumo rápido de presets:
 Observacoes:
 - Sem `--events`/`--events-preset`, o pipeline sugere preset recomendado em `stderr`.
 - Em combinacoes subotimas, o pipeline emite aviso em `stderr` com sugestao de ajuste.
+- Use `--no-ndjson-hints` para silenciar esses avisos/recomendacoes.
 
 Comando de teste automatizado do modo NDJSON:
 
