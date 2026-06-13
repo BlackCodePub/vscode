@@ -8,6 +8,7 @@ import Ajv2020 from 'ajv/dist/2020.js';
 type JsonObject = Record<string, unknown>;
 
 type NdjsonEventName = 'execution-report' | 'response' | 'validate-only-result' | 'output-written';
+type NdjsonPresetName = 'ci-minimal' | 'ci-debug';
 
 type RequestPayload = {
 	requestId: string;
@@ -82,9 +83,21 @@ const contractsDir = resolve(scriptDir, '..', 'contracts');
 const requestSchemaPath = resolve(contractsDir, 'request.schema.json');
 const responseSchemaPath = resolve(contractsDir, 'response.schema.json');
 const allowedNdjsonEvents = ['execution-report', 'response', 'validate-only-result', 'output-written'] as const;
+const ndjsonPresets: Record<NdjsonPresetName, readonly NdjsonEventName[]> = {
+	'ci-minimal': ['execution-report', 'response', 'validate-only-result'],
+	'ci-debug': allowedNdjsonEvents
+};
 
 function parseArgs(argv) {
-	const args = { request: '', output: '', report: '', validateOnly: false, ndjson: false, eventsRaw: '' };
+	const args = {
+		request: '',
+		output: '',
+		report: '',
+		validateOnly: false,
+		ndjson: false,
+		eventsRaw: '',
+		eventsPresetRaw: ''
+	};
 	for (let i = 2; i < argv.length; i++) {
 		const token = argv[i];
 		if ((token === '--request' || token === '-r') && argv[i + 1]) {
@@ -109,6 +122,10 @@ function parseArgs(argv) {
 		}
 		if ((token === '--events' || token === '-e') && argv[i + 1]) {
 			args.eventsRaw = argv[++i];
+			continue;
+		}
+		if ((token === '--events-preset' || token === '-E') && argv[i + 1]) {
+			args.eventsPresetRaw = argv[++i];
 		}
 	}
 	return args;
@@ -136,6 +153,20 @@ function parseNdjsonEventsFilter(raw: string): { filter?: Set<NdjsonEventName>; 
 	}
 
 	return { filter: new Set(requested as NdjsonEventName[]) };
+}
+
+function parseNdjsonPresetFilter(raw: string): { filter?: Set<NdjsonEventName>; error?: string } {
+	const preset = raw.trim();
+	if (!preset) {
+		return { error: 'Parametro --events-preset vazio. Use ci-minimal ou ci-debug.' };
+	}
+
+	if (!(preset in ndjsonPresets)) {
+		return { error: `Preset NDJSON invalido: ${preset}. Permitidos: ci-minimal, ci-debug` };
+	}
+
+	const typedPreset = preset as NdjsonPresetName;
+	return { filter: new Set(ndjsonPresets[typedPreset]) };
 }
 
 function readJsonFile(path) {
@@ -328,6 +359,26 @@ function main() {
 		process.exit(1);
 	}
 
+	if (args.eventsPresetRaw && !args.ndjson) {
+		report.outcome = 'usage-error';
+		report.exitCode = 1;
+		if (reportPath) {
+			writeExecutionReport(reportPath, report);
+		}
+		console.error('Parametro --events-preset requer --ndjson.');
+		process.exit(1);
+	}
+
+	if (args.eventsRaw && args.eventsPresetRaw) {
+		report.outcome = 'usage-error';
+		report.exitCode = 1;
+		if (reportPath) {
+			writeExecutionReport(reportPath, report);
+		}
+		console.error('Use apenas um entre --events e --events-preset.');
+		process.exit(1);
+	}
+
 	if (args.eventsRaw) {
 		const parsedFilter = parseNdjsonEventsFilter(args.eventsRaw);
 		if (parsedFilter.error) {
@@ -343,6 +394,21 @@ function main() {
 		ndjsonEventsFilter = parsedFilter.filter;
 	}
 
+	if (args.eventsPresetRaw) {
+		const parsedPreset = parseNdjsonPresetFilter(args.eventsPresetRaw);
+		if (parsedPreset.error) {
+			report.outcome = 'usage-error';
+			report.exitCode = 1;
+			if (reportPath) {
+				writeExecutionReport(reportPath, report);
+			}
+			console.error(parsedPreset.error);
+			process.exit(1);
+		}
+
+		ndjsonEventsFilter = parsedPreset.filter;
+	}
+
 	const emitterArgs = {
 		ndjson: args.ndjson,
 		ndjsonEventsFilter
@@ -355,7 +421,7 @@ function main() {
 			writeExecutionReport(reportPath, report);
 		}
 		emitExecutionReport(emitterArgs, report);
-		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>] [--validate-only] [--ndjson] [--events <lista>]');
+		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>] [--report <relatorio.json>] [--validate-only] [--ndjson] [--events <lista>] [--events-preset <ci-minimal|ci-debug>]');
 		process.exit(1);
 	}
 

@@ -71,6 +71,12 @@ Exemplo de filtro de eventos NDJSON:
 node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --ndjson --events execution-report,response
 ```
 
+Exemplo de preset de eventos NDJSON:
+
+```bash
+node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --ndjson --events-preset ci-minimal
+```
+
 Comando de teste automatizado do modo NDJSON:
 
 ```bash
