@@ -53,6 +53,20 @@ if (successLines[1]?.event !== 'response') {
 	process.exit(1);
 }
 
+const filteredRun = runWithArgs(['--request', sampleRequest, '--ndjson', '--events', 'execution-report']);
+if (filteredRun.status !== 0) {
+	console.error('Falha no teste NDJSON com filtro execution-report.');
+	console.error(filteredRun.stderr);
+	process.exit(1);
+}
+
+const filteredLines = parseNdjsonLines(filteredRun.stdout);
+if (filteredLines.length !== 1 || filteredLines[0]?.event !== 'execution-report') {
+	console.error('Filtro NDJSON falhou: esperado apenas evento execution-report.');
+	console.error(filteredRun.stdout);
+	process.exit(1);
+}
+
 const validateOnlyRun = runWithArgs(['--request', sampleRequest, '--validate-only', '--ndjson']);
 if (validateOnlyRun.status !== 0) {
 	console.error('Falha no teste NDJSON para validate-only.');
@@ -91,4 +105,26 @@ if (invalidOutcome !== 'request-invalid') {
 	process.exit(1);
 }
 
-console.log('Teste NDJSON passou para cenarios full, validate-only e request invalido.');
+const invalidUsageRun = runWithArgs(['--request', sampleRequest, '--events', 'response']);
+if (invalidUsageRun.status !== 1) {
+	console.error('Falha no teste de uso invalido: --events sem --ndjson deve retornar exit code 1.');
+	process.exit(1);
+}
+if (!invalidUsageRun.stderr.includes('Parametro --events requer --ndjson.')) {
+	console.error('Mensagem de uso invalido para --events sem --ndjson nao encontrada.');
+	console.error(invalidUsageRun.stderr);
+	process.exit(1);
+}
+
+const invalidEventRun = runWithArgs(['--request', sampleRequest, '--ndjson', '--events', 'foo']);
+if (invalidEventRun.status !== 1) {
+	console.error('Falha no teste de evento NDJSON invalido: exit code esperado 1.');
+	process.exit(1);
+}
+if (!invalidEventRun.stderr.includes('Evento(s) NDJSON invalido(s): foo.')) {
+	console.error('Mensagem de evento NDJSON invalido nao encontrada.');
+	console.error(invalidEventRun.stderr);
+	process.exit(1);
+}
+
+console.log('Teste NDJSON passou para cenarios full, filtro, validate-only, request invalido e erros de uso.');

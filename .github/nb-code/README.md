@@ -52,6 +52,12 @@ Exemplo em modo NDJSON (logs estruturados para pipeline):
 node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --ndjson
 ```
 
+Exemplo com filtro de eventos NDJSON:
+
+```bash
+node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --ndjson --events execution-report,response
+```
+
 Resultado:
 - Valida request e response pelos schemas em `contracts/*.schema.json`.
 - Aplica gate basico de seguranca (segredos e area sensivel).
@@ -59,6 +65,7 @@ Resultado:
 - Opcionalmente gera relatorio JSON de execucao para uso em CI (`--report`).
 - Opcionalmente roda em modo enxuto para CI com `--validate-only`.
 - Opcionalmente emite eventos estruturados em NDJSON com `--ndjson`.
+- No modo NDJSON, permite filtrar eventos com `--events` (lista separada por virgula).
 
 Teste negativo (request invalido):
 

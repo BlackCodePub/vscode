@@ -65,6 +65,12 @@ Exemplo de execucao com eventos estruturados:
 node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --ndjson
 ```
 
+Exemplo de filtro de eventos NDJSON:
+
+```bash
+node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --ndjson --events execution-report,response
+```
+
 Comando de teste automatizado do modo NDJSON:
 
 ```bash
