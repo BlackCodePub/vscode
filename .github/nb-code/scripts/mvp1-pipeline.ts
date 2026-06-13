@@ -1,7 +1,51 @@
 #!/usr/bin/env node
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import Ajv2020 from 'ajv/dist/2020.js';
+
+type JsonObject = Record<string, unknown>;
+
+type RequestPayload = {
+	requestId: string;
+	taskType: 'docs' | 'code' | 'refactor' | 'review' | 'setup';
+	goal: string;
+	constraints?: string[];
+	context: {
+		currentFile: string;
+		selectedText: string;
+		workspaceHints: string[];
+		gitDiffSummary?: string;
+	};
+};
+
+type ResponsePayload = {
+	requestId: string;
+	status: 'completed' | 'blocked' | 'needs-input';
+	summary: string;
+	actions: Array<{
+		type: 'edit' | 'create' | 'run-command' | 'analysis';
+		target: string;
+		description: string;
+	}>;
+	validations: Array<{
+		name: string;
+		result: 'passed' | 'failed' | 'skipped';
+		details?: string;
+	}>;
+	security: {
+		secretsExposed: boolean;
+		sensitiveAreaTouched: boolean;
+		notes: string;
+	};
+	nextSteps?: string[];
+};
+
+const scriptDir = dirname(fileURLToPath(import.meta.url));
+const contractsDir = resolve(scriptDir, '..', 'contracts');
+const requestSchemaPath = resolve(contractsDir, 'request.schema.json');
+const responseSchemaPath = resolve(contractsDir, 'response.schema.json');
 
 function parseArgs(argv) {
 	const args = { request: '', output: '' };
@@ -21,60 +65,47 @@ function parseArgs(argv) {
 
 function readJsonFile(path) {
 	const raw = readFileSync(path, 'utf-8');
-	return JSON.parse(raw);
+	return JSON.parse(raw) as JsonObject;
 }
 
-function hasString(value) {
-	return typeof value === 'string' && value.trim().length > 0;
+function formatSchemaErrors(errors: unknown[] | null | undefined) {
+	if (!errors || errors.length === 0) {
+		return ['Erro de validacao sem detalhes.'];
+	}
+
+	return errors.map(error => {
+		const typed = error as { instancePath?: string; message?: string; params?: Record<string, unknown> };
+		const location = typed.instancePath && typed.instancePath.length > 0 ? typed.instancePath : '/';
+		const detail = typed.message ?? 'erro de validacao';
+		const paramText = typed.params ? ` (${JSON.stringify(typed.params)})` : '';
+		return `${location}: ${detail}${paramText}`;
+	});
 }
 
-function validateRequest(request) {
-	const errors = [];
-	if (!request || typeof request !== 'object') {
-		errors.push('Request deve ser um objeto JSON.');
-		return errors;
-	}
-	if (!hasString(request.requestId)) {
-		errors.push('Campo requestId e obrigatorio.');
-	}
+function createSchemaValidators() {
+	const ajv = new Ajv2020({ allErrors: true, strict: false });
+	const requestSchema = readJsonFile(requestSchemaPath);
+	const responseSchema = readJsonFile(responseSchemaPath);
+	const validateRequest = ajv.compile<RequestPayload>(requestSchema);
+	const validateResponse = ajv.compile<ResponsePayload>(responseSchema);
 
-	const allowedTaskTypes = new Set(['docs', 'code', 'refactor', 'review', 'setup']);
-	if (!allowedTaskTypes.has(request.taskType)) {
-		errors.push('Campo taskType invalido.');
-	}
-	if (!hasString(request.goal) || request.goal.trim().length < 10) {
-		errors.push('Campo goal deve ter pelo menos 10 caracteres.');
-	}
-	if (!request.context || typeof request.context !== 'object') {
-		errors.push('Campo context e obrigatorio.');
-		return errors;
-	}
-	if (!hasString(request.context.currentFile)) {
-		errors.push('Campo context.currentFile e obrigatorio.');
-	}
-	if (typeof request.context.selectedText !== 'string') {
-		errors.push('Campo context.selectedText deve ser string.');
-	}
-	if (!Array.isArray(request.context.workspaceHints)) {
-		errors.push('Campo context.workspaceHints deve ser array.');
-	}
-	return errors;
+	return { validateRequest, validateResponse };
 }
 
-function detectSensitiveArea(request) {
+function detectSensitiveArea(request: RequestPayload) {
 	const text = [request.goal, ...(request.constraints || []), request.context?.selectedText || '']
 		.join(' ')
 		.toLowerCase();
 	return /(auth|autentic|crypto|criptograf|token|senha|password)/.test(text);
 }
 
-function detectSecretExposure(request) {
+function detectSecretExposure(request: RequestPayload) {
 	const text = [request.goal, request.context?.selectedText || ''].join(' ');
 	return /(api[_-]?key\s*=|token\s*=|password\s*=|senha\s*=)/i.test(text);
 }
 
-function buildActions(request) {
-	const actions = [];
+function buildActions(request: RequestPayload): ResponsePayload['actions'] {
+	const actions: ResponsePayload['actions'] = [];
 	actions.push({
 		type: 'analysis',
 		target: request.context.currentFile,
@@ -103,7 +134,7 @@ function buildActions(request) {
 	return actions;
 }
 
-function buildResponse(request) {
+function buildResponse(request: RequestPayload): ResponsePayload {
 	const sensitiveAreaTouched = detectSensitiveArea(request);
 	const secretsExposed = detectSecretExposure(request);
 
@@ -141,24 +172,8 @@ function buildResponse(request) {
 	return response;
 }
 
-function validateResponse(response) {
-	const errors = [];
-	if (!hasString(response.requestId)) {
-		errors.push('Response: requestId invalido.');
-	}
-	if (!new Set(['completed', 'blocked', 'needs-input']).has(response.status)) {
-		errors.push('Response: status invalido.');
-	}
-	if (!Array.isArray(response.actions) || response.actions.length === 0) {
-		errors.push('Response: actions deve conter ao menos uma acao.');
-	}
-	if (!response.security || typeof response.security !== 'object') {
-		errors.push('Response: security e obrigatorio.');
-	}
-	return errors;
-}
-
 function main() {
+	const { validateRequest, validateResponse } = createSchemaValidators();
 	const args = parseArgs(process.argv);
 	if (!args.request) {
 		console.error('Uso: node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request <arquivo.json> [--output <saida.json>]');
@@ -166,20 +181,21 @@ function main() {
 	}
 
 	const requestPath = resolve(args.request);
-	const request = readJsonFile(requestPath);
-	const requestErrors = validateRequest(request);
-	if (requestErrors.length > 0) {
-		console.error('Falha na validacao do request:');
+	const requestData = readJsonFile(requestPath);
+	if (!validateRequest(requestData)) {
+		const requestErrors = formatSchemaErrors(validateRequest.errors as unknown[] | null | undefined);
+		console.error('Falha na validacao do request (schema):');
 		for (const error of requestErrors) {
 			console.error(`- ${error}`);
 		}
 		process.exit(2);
 	}
 
+	const request = requestData as RequestPayload;
 	const response = buildResponse(request);
-	const responseErrors = validateResponse(response);
-	if (responseErrors.length > 0) {
-		console.error('Falha na validacao do response:');
+	if (!validateResponse(response)) {
+		const responseErrors = formatSchemaErrors(validateResponse.errors as unknown[] | null | undefined);
+		console.error('Falha na validacao do response (schema):');
 		for (const error of responseErrors) {
 			console.error(`- ${error}`);
 		}

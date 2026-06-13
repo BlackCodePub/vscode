@@ -20,7 +20,13 @@ Padronizar entrada, saida e validacoes minimas para as primeiras entregas do pro
 ## Pipeline Simples (Bloco 2)
 Script: `scripts/mvp1-pipeline.ts`
 
-Executa um fluxo ponta a ponta com validacao minima do request e montagem do response estruturado.
+Executa um fluxo ponta a ponta com validacao de schema usando AJV para request e response.
+
+Setup local:
+
+```bash
+npm --prefix .github/nb-code install
+```
 
 Exemplo:
 
@@ -29,9 +35,15 @@ node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --reque
 ```
 
 Resultado:
-- Valida campos obrigatorios do request.
+- Valida request e response pelos schemas em `contracts/*.schema.json`.
 - Aplica gate basico de seguranca (segredos e area sensivel).
 - Retorna response padronizado com actions, validations e security.
+
+Teste negativo (request invalido):
+
+```bash
+npm --prefix .github/nb-code run pipeline:test-negative
+```
 
 ## Regras criticas
 - Nunca expor segredos, tokens ou credenciais.

@@ -1,0 +1,14 @@
+{
+  "name": "nb-code-mvp1",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Pipeline MVP1 local do NB-Code",
+  "scripts": {
+    "pipeline:sample": "node --experimental-strip-types ./scripts/mvp1-pipeline.ts --request ./examples/request.sample.json --output ./examples/response.sample.json",
+    "pipeline:test-negative": "node --experimental-strip-types ./scripts/mvp1-negative-test.ts"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1"
+  }
+}
