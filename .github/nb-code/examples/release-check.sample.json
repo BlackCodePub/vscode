@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-06-13T19:55:37.044Z",
+  "timestamp": "2026-06-13T20:00:24.988Z",
   "project": "nb-code-mvp1",
   "status": "ready",
   "checks": [
@@ -16,8 +16,8 @@
     },
     {
       "name": "git-status:.github/nb-code",
-      "result": "skipped",
-      "details": "Verificacao de dirty tree ignorada por --skip-dirty-check."
+      "result": "passed",
+      "details": "Workspace .github/nb-code limpo para release."
     }
   ],
   "summary": "Release-check MVP1 concluido com validacoes essenciais aprovadas.",
