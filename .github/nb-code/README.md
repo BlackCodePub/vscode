@@ -17,6 +17,22 @@ Padronizar entrada, saida e validacoes minimas para as primeiras entregas do pro
 4. Registrar validacoes obrigatorias e resultado.
 5. Retornar resposta estruturada conforme contrato de saida.
 
+## Pipeline Simples (Bloco 2)
+Script: `scripts/mvp1-pipeline.ts`
+
+Executa um fluxo ponta a ponta com validacao minima do request e montagem do response estruturado.
+
+Exemplo:
+
+```bash
+node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.sample.json --output .github/nb-code/examples/response.sample.json
+```
+
+Resultado:
+- Valida campos obrigatorios do request.
+- Aplica gate basico de seguranca (segredos e area sensivel).
+- Retorna response padronizado com actions, validations e security.
+
 ## Regras criticas
 - Nunca expor segredos, tokens ou credenciais.
 - Nao aprovar merge automaticamente.
