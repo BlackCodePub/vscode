@@ -12,7 +12,9 @@
     "pipeline:test-validate-only": "node --experimental-strip-types ./scripts/mvp1-validate-only-test.ts",
     "pipeline:test-ndjson": "node --experimental-strip-types ./scripts/mvp1-ndjson-test.ts",
     "pipeline:test-fail-on-status": "node --experimental-strip-types ./scripts/mvp1-fail-on-status-test.ts",
-    "pipeline:test": "npm run pipeline:test-negative && npm run pipeline:test-regression && npm run pipeline:test-ci-report && npm run pipeline:test-validate-only && npm run pipeline:test-ndjson && npm run pipeline:test-fail-on-status"
+    "pipeline:test-release-check": "node --experimental-strip-types ./scripts/mvp1-release-check-test.ts",
+    "pipeline:test": "npm run pipeline:test-negative && npm run pipeline:test-regression && npm run pipeline:test-ci-report && npm run pipeline:test-validate-only && npm run pipeline:test-ndjson && npm run pipeline:test-fail-on-status && npm run pipeline:test-release-check",
+    "pipeline:release-check": "node --experimental-strip-types ./scripts/mvp1-release-check.ts"
   },
   "dependencies": {
     "ajv": "^8.17.1"

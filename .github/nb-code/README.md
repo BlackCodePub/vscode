@@ -123,6 +123,18 @@ Suite completa de regressao do pipeline:
 npm --prefix .github/nb-code run pipeline:test
 ```
 
+Checklist final de release MVP1 (com relatorio estruturado):
+
+```bash
+npm --prefix .github/nb-code run pipeline:release-check -- --output .github/nb-code/examples/release-check.sample.json
+```
+
+Notas do release-check:
+- Executa `pipeline:test` por padrao.
+- Verifica se `.github/nb-code` esta limpo para release.
+- Gera relatorio JSON com status `ready` ou `blocked`.
+- Flags uteis para diagnostico local: `--skip-tests` e `--skip-dirty-check`.
+
 ## Regras criticas
 - Nunca expor segredos, tokens ou credenciais.
 - Nao aprovar merge automaticamente.

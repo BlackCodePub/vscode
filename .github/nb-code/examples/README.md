@@ -101,6 +101,12 @@ Exemplo com preset de gate de status:
 node --experimental-strip-types .github/nb-code/scripts/mvp1-pipeline.ts --request .github/nb-code/examples/request.secret.sample.json --fail-on-status-preset security
 ```
 
+Exemplo de finalizacao com release-check e relatorio:
+
+```bash
+npm --prefix .github/nb-code run pipeline:release-check -- --output .github/nb-code/examples/release-check.sample.json
+```
+
 Resumo rápido de presets:
 - `ci-minimal`: fluxo leve para CI geral.
 - `ci-audit`: rastreia execucao e escrita de artefato.
@@ -112,6 +118,7 @@ Observacoes:
 - Use `--no-ndjson-hints` para silenciar esses avisos/recomendacoes.
 - Use `--fail-on-status` para forcar falha de processo (exit code `4`) quando o status retornado estiver na lista configurada.
 - Use `--fail-on-status-preset` para aplicar gate por politica pronta: `strict` (needs-input + blocked) ou `security` (apenas blocked).
+- Use o release-check para executar validacoes finais e produzir um relatorio unico de prontidao (`ready`/`blocked`).
 
 Comando de teste automatizado do modo NDJSON:
 

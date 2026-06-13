@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-06-13T19:51:44.717Z",
+  "project": "nb-code-mvp1",
+  "status": "blocked",
+  "checks": [
+    {
+      "name": "required-files",
+      "result": "passed",
+      "details": "Arquivos obrigatorios encontrados (4)."
+    },
+    {
+      "name": "pipeline:test",
+      "result": "failed",
+      "details": "Falha na suite pipeline:test. Resumo: sem detalhes",
+      "exitCode": 1
+    },
+    {
+      "name": "git-status:.github/nb-code",
+      "result": "skipped",
+      "details": "Verificacao de dirty tree ignorada por --skip-dirty-check."
+    }
+  ],
+  "summary": "Release-check MVP1 bloqueado. Corrija os checks falhos antes de finalizar o projeto.",
+  "nextSteps": [
+    "Revisar os checks com result=failed no relatorio.",
+    "Corrigir os pontos pendentes e executar novamente o release-check."
+  ]
+}
